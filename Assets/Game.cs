@@ -1,25 +1,115 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
+
+/*
+ * TODO:
+ * 	- [ ] UI
+ * 	- [ ] check if player lost
+ * 	- [ ] animate jumps
+ * 	- [ ] jumps, bend down to get lower
+ * 
+ * Features:
+ * 	- [ ] double jumps for high obstacles
+ * 	- [ ] sometimes ground dissapears, and player jumps from 1 square to another one
+ * 	- [ ] collecting gems for reward
+ * 	- [ ] highscore local and global
+ * 	- [ ] PvP mode automatic pairing
+ * 	- [ ] achievements, highscore, store, no ads, volume
+ */
+
+/*public class MiniGestureRecognizer : MonoBehaviour {
+	public enum SwipeDirection{
+		Up,
+		Down,
+		Right,
+		Left
+	}
+
+	public static event Action<SwipeDirection> Swipe;
+	private bool swiping = false;
+	private bool eventSent = false;
+	private Vector2 lastPosition;
+
+	void Update () {
+		if (Input.touchCount == 0) 
+			return;
+
+		if (Input.GetTouch(0).deltaPosition.sqrMagnitude != 0) {
+			if (swiping == false) {
+				swiping = true;
+				lastPosition = Input.GetTouch(0).position;
+				return;
+			}
+			else {
+				if (!eventSent) {
+					if (Swipe != null) {
+						Vector2 direction = Input.GetTouch(0).position - lastPosition;
+
+						if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y)) {
+							if (direction.x > 0) 
+								Swipe(SwipeDirection.Right);
+							else
+								Swipe(SwipeDirection.Left);
+						}
+						else{
+							if (direction.y > 0)
+								Swipe(SwipeDirection.Up);
+							else
+								Swipe(SwipeDirection.Down);
+						}
+
+						eventSent = true;
+					}
+				}
+			}
+		}
+		else {
+			swiping = false;
+			eventSent = false;
+		}
+	}
+}*/
 
 public class Game : MonoBehaviour {
-	public float speed = 0.1f;
 	private int frame_counter = 0;
 	private GameObject player;
-
+	private List<GameObject> obstacles;
+	private bool done;
+	private int score;
 
 	//public float jumpHeight;
 	public float jumpSpeed;
-	private float leftToJump;
+	public float speed = 0.1f;
 
 	// Use this for initialization
 	void Start () {
+		done = false;
+		obstacles = new List<GameObject>();
+		score = 0;
+
 		player = GameObject.Find("Player");
+		player.AddComponent<PlayerCollider>();
+		PlayerCollider pc = player.GetComponent<PlayerCollider>();
+
+		obstacles.Add(mkObstacle());
+
+		pc.callback = col => {
+			if (col.gameObject.name != "Ground") {
+				Debug.Log("Touching");
+				GameObject.Find("ScoreText").GetComponent<Text>().text = "You lost! You score is: " + score;
+
+				done = true;
+			}
+			//if (
+		};
+
 		/*GameObject.CreatePrimitive(PrimitiveType.Cube);
 		player.transform.position = new Vector3(1.0f, 0.11f, 0.0f);
 		player.transform.SetParent(gameObject.transform);
 		player.AddComponent<Rigidbody>();*/
 	}
-
 
 	bool IsClick() {
 		return Input.GetMouseButtonDown(1); //also check phone touch
@@ -30,21 +120,58 @@ public class Game : MonoBehaviour {
 		rb.AddForce(new Vector3(1.0f, 400.0f, 1.0f));
 	}
 
+	GameObject mkObstacle() {
+		var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+		var pos = transform.position;
+		obstacle.transform.position = new Vector3(pos.x + 10, pos.y, pos.z + 5);
+		return obstacle;
+	}
+
 	// Update is called once per frame
 	void Update () {
-		var trans = transform.position;
+		if (done)
+			return;
+		var rb = player.GetComponent<Rigidbody>();
+		var pos = player.transform.position;
 
-		if (frame_counter++ > 100) {
-			var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-			obstacle.transform.position = new Vector3(trans.x + 10, trans.y, trans.z + 5);
+		//if (rb.velocity.z > 0) {
+			Vector3 v = rb.velocity;
+			v = new Vector3(v.x, v.y, 0);
+			rb.velocity = v;
+		//}
+		var e = player.transform.eulerAngles;
+		player.transform.eulerAngles = new Vector3(0, e.y, e.z);
+
+		var last = obstacles[obstacles.Count-1];
+		var last_trans = last.transform;
+		var last_pos = last_trans.position;
+
+		if (pos.x > last_pos.x && frame_counter++ > 10) {
+			score++;
+			var t = GameObject.Find("ScoreText").GetComponent<Text>();
+			t.text = score.ToString();
+
+			var obstacle = mkObstacle();
+			obstacles.Add(obstacle);
 			frame_counter = 0;
 		}
 
-		transform.position = new Vector3(trans.x + speed, trans.y, trans.z);
+		pos = transform.position;
+		transform.position = new Vector3(pos.x + speed, pos.y, pos.z);
 
 		if (IsClick()) {
 			Debug.Log("jumped");
 			Jump();
 		}
+	}
+}
+
+
+public class PlayerCollider : MonoBehaviour {
+	public delegate void CallBack(Collision col);
+	public CallBack callback;
+
+	void OnCollisionEnter(Collision col) {
+		callback(col);
 	}
 }
