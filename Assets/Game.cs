@@ -102,7 +102,7 @@ public class Game : MonoBehaviour {
 
 				done = true;
 			}
-			//if (
+
 		};
 
 		/*GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -112,7 +112,7 @@ public class Game : MonoBehaviour {
 	}
 
 	bool IsClick() {
-		return Input.GetMouseButtonDown(1); //also check phone touch
+		return (frame_counter++ > 20) && (Input.GetMouseButtonDown(1) || (Input.touchCount >= 1)) && (player.transform.position.y < 0.1); //also check phone touch
 	}
 
 	void Jump() {
@@ -123,7 +123,7 @@ public class Game : MonoBehaviour {
 	GameObject mkObstacle() {
 		var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
 		var pos = transform.position;
-		obstacle.transform.position = new Vector3(pos.x + 10, pos.y, pos.z + 5);
+		obstacle.transform.position = new Vector3(pos.x + 16, pos.y, pos.z + 5); //pos.x + 10
 		return obstacle;
 	}
 
@@ -146,7 +146,7 @@ public class Game : MonoBehaviour {
 		var last_trans = last.transform;
 		var last_pos = last_trans.position;
 
-		if (pos.x > last_pos.x && frame_counter++ > 10) {
+		if (pos.x > last_pos.x && frame_counter++ > 4) {
 			score++;
 			var t = GameObject.Find("ScoreText").GetComponent<Text>();
 			t.text = score.ToString();
@@ -160,6 +160,7 @@ public class Game : MonoBehaviour {
 		transform.position = new Vector3(pos.x + speed, pos.y, pos.z);
 
 		if (IsClick()) {
+			frame_counter = 0;
 			Debug.Log("jumped");
 			Jump();
 		}
