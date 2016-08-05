@@ -124,11 +124,18 @@ public class Game : MonoBehaviour {
 
 		transform.position = new Vector3(0, 1, -10);
 
+		obstacles = new List<GameObject>();
+		obstacles.Add(mkObstacle());
+
 		if (firstRun) {
-			//done = true;
+			done = true;
+			framesSinceDone = 0;
+			firstRun = false;
+
 			bestScoreText = GameObject.Find("BestScore");
 			currentScoreText = GameObject.Find("CurrentScore");
 			instructionsText = GameObject.Find("Instructions");
+			setScore(false, 0, 0);
 
 			//init_player_transform = player.transform;
 			init_player_pos = player.transform.position;
@@ -154,11 +161,9 @@ public class Game : MonoBehaviour {
 		else {
 			player.transform.position = init_player_pos;
 			player.transform.eulerAngles = init_player_rot;
+			setScore(true, 0, 0);
 		}
-		setScore(true, 0, 0);
-
-		obstacles = new List<GameObject>();
-		obstacles.Add(mkObstacle());
+		//setScore(true, 0, 0);
 
 		GameObject.Find("ScoreText").GetComponent<Text>().text = "0";
 
