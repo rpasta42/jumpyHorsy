@@ -89,6 +89,31 @@ public class Game : MonoBehaviour {
 	private Vector3 init_player_pos;
 	private Vector3 init_player_rot;
 
+	private GameObject bestScoreText;
+	private GameObject currentScoreText;
+	private GameObject instructionsText;
+
+	public int bestScore = 0;
+
+	void setScore(bool hide, int currentScore, int bestScore) {
+		var best = GameObject.Find("BestScore");
+		var current = GameObject.Find("CurrentScore");
+		var instructions = GameObject.Find("Instructions");
+
+		if (hide) {
+			instructionsText.SetActive(false);
+			bestScoreText.SetActive(false);
+			currentScoreText.SetActive(false);
+		} else {
+			instructionsText.SetActive(true);
+			bestScoreText.SetActive(true);
+			currentScoreText.SetActive(true);
+
+			bestScoreText.GetComponent<Text>().text = "Best Score: " + bestScore.ToString();
+			currentScoreText.GetComponent<Text>().text = "Current Score: " + currentScore.ToString();
+		}
+	}
+
 	// Use this for initialization
 	void Start () {
 		done = false;
@@ -100,6 +125,11 @@ public class Game : MonoBehaviour {
 		transform.position = new Vector3(0, 1, -10);
 
 		if (firstRun) {
+			//done = true;
+			bestScoreText = GameObject.Find("BestScore");
+			currentScoreText = GameObject.Find("CurrentScore");
+			instructionsText = GameObject.Find("Instructions");
+
 			//init_player_transform = player.transform;
 			init_player_pos = player.transform.position;
 			init_player_rot = player.transform.eulerAngles;
@@ -109,17 +139,23 @@ public class Game : MonoBehaviour {
 			pc.callback = col => {
 				if (col.gameObject.name != "Ground") {
 					Debug.Log("Touching");
-					GameObject.Find("ScoreText").GetComponent<Text>().text = "You lost! You score is: " + score;
+					//GameObject.Find("ScoreText").GetComponent<Text>().text = "You lost! You score is: " + score;
+
+					if (score > bestScore)
+						bestScore = score;
+					setScore(false, score, bestScore);
 
 					done = true;
 					firstRun = false;
 					framesSinceDone = 0;
 				}
 			};
-		} else {
+		}
+		else {
 			player.transform.position = init_player_pos;
 			player.transform.eulerAngles = init_player_rot;
 		}
+		setScore(true, 0, 0);
 
 		obstacles = new List<GameObject>();
 		obstacles.Add(mkObstacle());
