@@ -77,33 +77,54 @@ public class Game : MonoBehaviour {
 	private GameObject player;
 	private List<GameObject> obstacles;
 	private bool done;
+	private int framesSinceDone;
+
 	private int score;
 
 	//public float jumpHeight;
 	public float jumpSpeed;
 	public float speed = 0.1f;
 
+	public bool firstRun;
+	private Vector3 init_player_pos;
+	private Vector3 init_player_rot;
+
 	// Use this for initialization
 	void Start () {
 		done = false;
-		obstacles = new List<GameObject>();
 		score = 0;
+		speed = 0.1f;
 
 		player = GameObject.Find("Player");
-		player.AddComponent<PlayerCollider>();
-		PlayerCollider pc = player.GetComponent<PlayerCollider>();
 
+		transform.position = new Vector3(0, 1, -10);
+
+		if (firstRun) {
+			//init_player_transform = player.transform;
+			init_player_pos = player.transform.position;
+			init_player_rot = player.transform.eulerAngles;
+			player.AddComponent<PlayerCollider>();
+
+			PlayerCollider pc = player.GetComponent<PlayerCollider>();
+			pc.callback = col => {
+				if (col.gameObject.name != "Ground") {
+					Debug.Log("Touching");
+					GameObject.Find("ScoreText").GetComponent<Text>().text = "You lost! You score is: " + score;
+
+					done = true;
+					firstRun = false;
+					framesSinceDone = 0;
+				}
+			};
+		} else {
+			player.transform.position = init_player_pos;
+			player.transform.eulerAngles = init_player_rot;
+		}
+
+		obstacles = new List<GameObject>();
 		obstacles.Add(mkObstacle());
 
-		pc.callback = col => {
-			if (col.gameObject.name != "Ground") {
-				Debug.Log("Touching");
-				GameObject.Find("ScoreText").GetComponent<Text>().text = "You lost! You score is: " + score;
-
-				done = true;
-			}
-
-		};
+		GameObject.Find("ScoreText").GetComponent<Text>().text = "0";
 
 		/*GameObject.CreatePrimitive(PrimitiveType.Cube);
 		player.transform.position = new Vector3(1.0f, 0.11f, 0.0f);
@@ -123,14 +144,42 @@ public class Game : MonoBehaviour {
 	GameObject mkObstacle() {
 		var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
 		var pos = transform.position;
-		obstacle.transform.position = new Vector3(pos.x + 16, pos.y, pos.z + 5); //pos.x + 10
+
+		float spawnDistance = 16 - (obstacles.Count/3);
+
+		if (spawnDistance < 12)
+			spawnDistance *= 1.3f;
+		if (spawnDistance < 10)
+			spawnDistance *= 1.7f;
+		if (spawnDistance < 3)
+			spawnDistance = 3;
+		
+		if (speed < 0.12f)
+			speed += 0.01f;
+		else if (speed < 0.14f)
+			speed += 0.003f;
+		else if (speed < 0.16f)
+			speed += 0.001f;
+		
+		/*if (speed > 0.25f)
+			speed *= 0.7f;
+		if (speed > 0.18f)
+			speed *= 0.8f;*/
+		
+		obstacle.transform.position = new Vector3(pos.x + spawnDistance, pos.y, pos.z + 5); //pos.x + 10
 		return obstacle;
 	}
 
 	// Update is called once per frame
 	void Update () {
-		if (done)
+		if (done) {
+			if (framesSinceDone++ > 8 && (Input.GetMouseButtonDown(1) || (Input.touchCount >= 1))) {
+				for (int i = 0; i < obstacles.Count; i++)
+					Destroy(obstacles[i]);
+				Start();
+			}
 			return;
+		}
 		var rb = player.GetComponent<Rigidbody>();
 		var pos = player.transform.position;
 
